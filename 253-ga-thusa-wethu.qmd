@@ -20,28 +20,33 @@ knitr:
     warning: false
 ---
 
-<!-- ## Quarto -->
+# Introduction
 
-<!-- Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>. -->
+- 
 
-<!-- ## Running Code -->
+# DATA Wrangling
 
-<!-- When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this: -->
 
-<!-- ```{r} -->
+```{r}
+library(tidyverse)
+library(tidymodels)
 
-<!-- 1 + 1 -->
+# Import original data
+listings <- read.csv("https://ajohns24.github.io/data/NYC_airbnb_kaggle.csv")
+nbhd     <- read.csv("https://ajohns24.github.io/data/NYC_nbhd_kaggle.csv")
 
-<!-- ``` -->
+# Wrangle this into the final airbnb data
+set.seed(253)
+airbnb <- listings %>% 
+  filter(price > 0, price < 1000) %>% 
+  sample_n(size = 5000) %>% 
+  rename(neighbourhood = neighbourhood_cleansed) %>% 
+  left_join(nbhd) %>% 
+  select(-neighbourhood, -amenities, -host_response_rate, -calendar_updated)
+```
 
-<!-- You can add options to executable code like this -->
+**Plots**
 
-<!-- ```{r} -->
 
-<!-- #| echo: false -->
+**Summary of plots**
 
-<!-- 2 * 2 -->
-
-<!-- ``` -->
-
-<!-- The `echo: false` option disables the printing of code (only output is displayed). -->
