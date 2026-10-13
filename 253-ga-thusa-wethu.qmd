@@ -1,6 +1,6 @@
 ---
 title: "stat253-ga-thusa-wethu"
-authers: Wethu Mhlanga & Providence Thusabantu
+authors: "Wethu Mhlanga & Providence Thusabantu"
 editor: visual
 date: today
 format:
