@@ -45,8 +45,23 @@ airbnb <- listings %>%
   select(-neighbourhood, -amenities, -host_response_rate, -calendar_updated)
 ```
 
+**Extended wrangling**
+
+```{r}
+library(dplyr)
+
+airbnb %>%
+  select(-c(latitude, longitude, host_response_time, host_is_superhost, host_has_profile_pic, is_location_exact, review_scores_rating, cancellation_policy, require_guest_profile_picture, reviews_per_month)) %>%
+  # step_string2factor() %>%
+  step_impute_knn() %>%
+  head(4)
+```
+
+
+
 **Plots**
 
+> This is where we place the plots.
 
 **Summary of plots**
 
