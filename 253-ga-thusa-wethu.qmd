@@ -50,11 +50,17 @@ airbnb <- listings %>%
 ```{r}
 library(dplyr)
 
+<<<<<<< HEAD
 #airbnb %>%
   # select(-c(latitude, longitude, host_response_time, host_is_superhost, host_has_profile_pic, is_location_exact, review_scores_rating, cancellation_policy, require_guest_profile_picture, reviews_per_month)) %>%
   # # step_string2factor() %>%
   # step_impute_knn() %>%
   # head(4)
+=======
+airbnb_reduced <- airbnb %>%
+  select(-c(latitude, longitude, host_response_time, host_is_superhost, host_has_profile_pic, is_location_exact, review_scores_rating, cancellation_policy, require_guest_profile_picture, reviews_per_month))
+
+>>>>>>> 91793bb7aaf1850ddd26a640cf173b347c597807
 ```
 
 ```{r}
@@ -79,10 +85,10 @@ airbnb_baked <- airbnb_recipe %>%
 head(airbnb_baked)
 ```
 
-
 **Plots**
 
 ```{r}
+<<<<<<< HEAD
 # Plot 1: Predictors used (2): accommodation capacity, roomtype
 ggplot(airbnb_baked, aes(x = accommodates, y = price, color = room_type)) +
   geom_point(alpha = 0.4, position = "jitter") +
@@ -166,6 +172,22 @@ ggplot(airbnb_baked, aes(x = availability_30, y = price, color = instant_bookabl
     size = "Minimum Nights Requirement"
   ) +
   theme_minimal()
+=======
+airbnb_reduced %>%
+  group_by(neighbourhood_group) %>%
+  ggplot(aes(y = price, x = neighbourhood_group)) +
+  geom_col() +
+  labs(
+    title = "Neighbourhood vs Price of Airbnbs in NYC"
+  )
+```
+```{r}
+airbnb_reduced %>% 
+  ggplot(aes(x = square_feet, y = price, color = is_business_travel_ready)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+  
+>>>>>>> 91793bb7aaf1850ddd26a640cf173b347c597807
 ```
 
 
