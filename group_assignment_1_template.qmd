@@ -1,0 +1,116 @@
+---
+title: "Your Title"
+subtitle: "STAT 253 Group Assignment 1"
+date: today
+author: "Your Names"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    embed-resources: true
+    error: false
+---
+
+<!-- NOTE TO STUDENTS:  -->
+<!-- - Change the title in line 2. -->
+<!-- - Put all names in line 5. -->
+<!-- - Do not modify the structure of this template! -->
+
+
+```{r setup}
+#| include: false
+knitr::opts_chunk$set(
+  collapse = TRUE, 
+  warning = FALSE,
+  message = FALSE,
+  fig.height = 2.75, 
+  fig.width = 4.25,
+  fig.env='figure',
+  fig.pos = 'h',
+  fig.align = 'center')
+
+# Use a more color blind friendly color palette
+# Set theme + color blind friendlier paletter
+palette(palette.colors(palette = "Okabe-Ito"))
+scale_colour_discrete <- function(...) scale_colour_manual(values = palette())
+scale_fill_discrete <- function(...) scale_fill_manual(values = palette())
+theme_set(theme_bw())
+```
+
+\
+\
+
+
+
+
+
+# 1. Key Takeaways
+
+<!-- REMEMBER: NO R code in this section. -->
+
+
+
+
+
+
+
+\
+\
+\
+\
+
+
+# 2. Technical details
+
+
+
+
+
+
+
+\
+\
+\
+\
+
+
+# 3. Contributions
+
+
+
+
+
+
+
+
+
+
+\
+\
+\
+\
+
+
+
+# 4. AI Disclosures
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\
+\
+\
+\
+
+
+
