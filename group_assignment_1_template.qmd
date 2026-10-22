@@ -177,6 +177,12 @@ parsimonious_penalty <- airbnb_lasso_models |>
   select_by_one_std_err(metric = "mae", desc(penalty))
 
 parsimonious_penalty
+
+# Check MAE
+show_best(airbnb_lasso_models, metric = "mae")
+
+collect_metrics(airbnb_lasso_models) |> 
+  filter(penalty == parsimonious_penalty$penalty)
 ```
 
 
