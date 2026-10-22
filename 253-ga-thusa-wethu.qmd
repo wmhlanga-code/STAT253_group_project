@@ -83,6 +83,7 @@ ggplot(airbnb_baked, aes(x = accommodates, y = price, color = room_type)) +
   ) +
   theme_minimal()
 ```
+
 ```{r}
 # Plot 2: Price Distributions Across Neighborhood Groups (Boroughs)
 ggplot(airbnb_baked, aes(x = neighbourhood_group, y = price, fill = neighbourhood_group)) +
@@ -156,86 +157,95 @@ ggplot(airbnb_baked, aes(x = availability_30, y = price, color = instant_bookabl
   theme_minimal()
 ```
 
+```{r}
+colSums(is.na(airbnb)) %>% sort(decreasing = TRUE)
+```
 
-> This is where we place the plots.
+
+
+> LASSO Model
+
+```{r}
+airbnb_reduced <- airbnb %>%
+  select(-id, -square_feet) %>%
+  mutate(reviews_per_month = replace_na(reviews_per_month, 0)) 
+```
+
 
 ```{r}
 library(tidyverse)
 library(tidymodels)
 
+# Define model specification
+airbnb_lasso_spec <- linear_reg() |> 
+  set_mode("regression") |> 
+  set_engine("glmnet") |> 
+  set_args(mixture = 1, penalty = tune())
+
+# Define recipe preprocessing steps
+airbnb_variable_recipe <- recipe(price ~ ., data = airbnb) |> 
+  step_rm(id) |> 
+  step_string2factor(all_nominal_predictors()) |> 
+  step_impute_knn(all_predictors(), neighbors = 5) |> 
+  step_dummy(all_nominal_predictors()) 
+ 
+```
+
+```{r}
+# Bundle into workflow
+airbnb_lasso_workflow <- workflow() |> 
+  add_recipe(airbnb_variable_recipe) |> 
+  add_model(airbnb_lasso_spec)
+```
+
+
+```{r}
+# Tune model over cross-validation grid
 set.seed(253)
-
-# This removes columns with zero variance to keep the LASSO math engine stable
-airbnb_recipe_model <- recipe(price ~ ., data = airbnb) %>% 
-  step_rm(id) %>% 
-  step_string2factor(all_nominal_predictors()) %>% 
-  step_dummy(all_nominal_predictors()) %>% 
-  step_zv(all_predictors()) %>% 
-  step_impute_knn(all_predictors(), neighbors = 5)
-
-
-# Cross Validation Folds
-airbnb_folds <- vfold_cv(airbnb, v = 10)
-```
-
-```{r}
-# LS regression model
-lm_spec <- linear_reg() %>% 
-  set_engine("lm") %>% 
-  set_mode("regression")
-
-lm_workflow <- workflow() %>% 
-  add_recipe(airbnb_recipe_model) %>% 
-  add_model(lm_spec)
-
-lm_cv_results <- fit_resamples(
-  lm_workflow,
-  resamples = airbnb_folds,
-  metrics = metric_set(mae, rmse, rsq)
-)
-
-print("LS metrics")
-print(collect_metrics(lm_cv_results))
-
+airbnb_lasso_models <- airbnb_lasso_workflow |> 
+  tune_grid(
+    grid = grid_regular(penalty(range = c(-3, 1)), levels = 50),
+    resamples = vfold_cv(airbnb, v = 10),
+    metrics = metric_set(mae)
+  )
 ```
 
 
 ```{r}
-# Penalized lasso regression
-lasso_spec <- linear_reg(penalty = tune(), mixture = 1) %>% 
-  set_engine("glmnet") %>% 
-  set_mode("regression")
-
-lasso_workflow <- workflow() %>% 
-  add_recipe(airbnb_recipe_model) %>% 
-  add_model(lasso_spec)
-
-lasso_grid <- grid_regular(penalty(range = c(-3, 1)), levels = 50)
-
-lasso_tune_results <- tune_grid(
-  lasso_workflow,
-  resamples = airbnb_folds,
-  grid = lasso_grid,
-  metrics = metric_set(mae, rmse)
-)
-
-
-print("LASSO metrics")
-print(show_best(lasso_tune_results, metric = "mae", n = 5))
-
+# Plot cross-validation results
+autoplot(airbnb_lasso_models) + 
+  scale_x_continuous() + 
+  xlab(expression(lambda))
 ```
+
 ```{r}
-# To see which predictors remain
-best_lasso_fit <- lasso_workflow %>% 
-  finalize_workflow(select_best(lasso_tune_results, metric = "mae")) %>% 
+# Select optimal penalty parameter
+best_penalty <- airbnb_lasso_models |> 
+  select_best(metric = "mae")
+
+best_penalty
+
+parsimonious_penalty <- airbnb_lasso_models |> 
+  select_by_one_std_err(metric = "mae", desc(penalty))
+
+parsimonious_penalty
+```
+
+
+```{r}
+# Finalize workflow and fit full model
+airbnb_final_lasso <- airbnb_lasso_workflow |> 
+  finalize_workflow(parameters = parsimonious_penalty) |> 
   fit(data = airbnb)
 
-best_lasso_fit %>% 
-  extract_fit_engine() %>% 
-  tidy() %>% 
-  filter(step == max(step))
+# View non-zero coefficient estimates
+airbnb_final_lasso |> 
+  tidy() |> 
+  filter(estimate != 0) %>% 
+  arrange(desc(abs(estimate)))
 ```
 
+- Looking at this model, there's is longitude but there's no latitude within the model which also doesn't make a lot of sense because longitude is a coordinate and has to go with another latitude coordinate. Which means if we remove it from the dataset we need to also remove the latitude column too.
 
 
 **Summary of plots**

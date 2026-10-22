@@ -1,8 +1,8 @@
 ---
-title: "Your Title"
+title: "What Drives the Price of a Stay?"
 subtitle: "STAT 253 Group Assignment 1"
 date: today
-author: "Your Names"
+author: "Wethu Mhlanga, Providence Thusabantu, Rukhshona Jalilova"
 format:
   html:
     toc: true
@@ -31,6 +31,10 @@ knitr::opts_chunk$set(
 
 # Use a more color blind friendly color palette
 # Set theme + color blind friendlier paletter
+library(tidyverse)
+library(tidymodels)
+
+
 palette(palette.colors(palette = "Okabe-Ito"))
 scale_colour_discrete <- function(...) scale_colour_manual(values = palette())
 scale_fill_discrete <- function(...) scale_fill_manual(values = palette())
@@ -39,6 +43,7 @@ theme_set(theme_bw())
 
 \
 \
+
 
 
 
@@ -62,10 +67,122 @@ theme_set(theme_bw())
 
 # 2. Technical details
 
+```{r}
+# Import original data
+listings <- read.csv("https://ajohns24.github.io/data/NYC_airbnb_kaggle.csv")
+nbhd     <- read.csv("https://ajohns24.github.io/data/NYC_nbhd_kaggle.csv")
+
+# Wrangle this into the final airbnb data
+set.seed(253)
+airbnb <- listings %>% 
+  filter(price > 0, price < 1000) %>% 
+  sample_n(size = 5000) %>% 
+  rename(neighbourhood = neighbourhood_cleansed) %>% 
+  left_join(nbhd) %>% 
+  select(-neighbourhood, -amenities, -host_response_rate, -calendar_updated)
+```
+
+**Plots**
+
+```{r}
+# Plot 1: Price Distributions Across Neighborhood Groups (Boroughs)
+ggplot(airbnb, aes(x = neighbourhood_group, y = price, fill = neighbourhood_group)) +
+  geom_boxplot(alpha = 0.7, outlier.alpha = 0.2) +
+  labs(
+    title = "AirBnB Price Distributions Across NYC Boroughs",
+    x = "Borough",
+    y = "Nightly Price ($)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  scale_fill_viridis_d()
+```
+
+```{r}
+# Plot 2: Predictors used (2): accommodation capacity, roomtype
+ggplot(airbnb, aes(x = accommodates, y = price, color = room_type)) +
+  geom_point(alpha = 0.4, position = "jitter") +
+  geom_smooth(method = "loess", se = FALSE, size = 1.2) +
+  labs(
+    title = "Price Trends by Physical Capacity and Room Type",
+    x = "Number of Guests Accommodated",
+    y = "Nightly Price ($)",
+    color = "Room Type"
+  ) +
+  theme_minimal()
+```
 
 
+> LASSO Model
+
+```{r}
+# Define model specification
+airbnb_lasso_spec <- linear_reg() |> 
+  set_mode("regression") |> 
+  set_engine("glmnet") |> 
+  set_args(mixture = 1, penalty = tune())
+
+# Define recipe preprocessing steps
+airbnb_variable_recipe <- recipe(price ~ ., data = airbnb) |> 
+  step_rm(id) |> 
+  step_string2factor(all_nominal_predictors()) |> 
+  step_impute_knn(all_predictors(), neighbors = 5) |> 
+  step_dummy(all_nominal_predictors()) 
+```
+
+```{r}
+# Bundle into workflow
+airbnb_lasso_workflow <- workflow() |> 
+  add_recipe(airbnb_variable_recipe) |> 
+  add_model(airbnb_lasso_spec)
+```
 
 
+```{r}
+# Tune model over cross-validation grid
+set.seed(253)
+airbnb_lasso_models <- airbnb_lasso_workflow |> 
+  tune_grid(
+    grid = grid_regular(penalty(range = c(-3, 1)), levels = 50),
+    resamples = vfold_cv(airbnb, v = 10),
+    metrics = metric_set(mae)
+  )
+```
+
+
+```{r}
+# Plot cross-validation results
+autoplot(airbnb_lasso_models) + 
+  scale_x_continuous() + 
+  xlab(expression(lambda))
+```
+
+```{r}
+# Select optimal penalty parameter
+best_penalty <- airbnb_lasso_models |> 
+  select_best(metric = "mae")
+
+best_penalty
+
+parsimonious_penalty <- airbnb_lasso_models |> 
+  select_by_one_std_err(metric = "mae", desc(penalty))
+
+parsimonious_penalty
+```
+
+
+```{r}
+# Finalize workflow and fit full model
+airbnb_final_lasso <- airbnb_lasso_workflow |> 
+  finalize_workflow(parameters = parsimonious_penalty) |> 
+  fit(data = airbnb)
+
+# View non-zero coefficient estimates
+airbnb_final_lasso %>%
+  tidy() %>%
+  filter(estimate != 0) %>% 
+  arrange(desc(abs(estimate)))
+```
 
 
 \
