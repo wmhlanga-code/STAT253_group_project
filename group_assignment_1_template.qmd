@@ -171,7 +171,11 @@ collect_metrics(airbnb_lasso_models) |>
 # Plot cross-validation results
 autoplot(airbnb_lasso_models) + 
   scale_x_continuous() + 
-  xlab(expression(lambda))
+  xlab(expression(lambda)) +
+  labs(
+    title = "CV MAE vs Tuning parameter",
+    caption = "Figure 3"
+  )
 
 parsimonious_penalty <- airbnb_lasso_models |> 
   select_by_one_std_err(metric = "mae", desc(penalty))
