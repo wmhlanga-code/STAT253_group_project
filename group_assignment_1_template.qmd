@@ -81,10 +81,8 @@ airbnb <- listings %>%
   rename(neighbourhood = neighbourhood_cleansed) %>% 
   left_join(nbhd) %>% 
   select(-neighbourhood, -amenities, -host_response_rate, -calendar_updated)
-```
 
-```{r}
-# Data wrangling 
+# Data wrangling and removign columns
 airbnb_model <- airbnb %>% 
   select(-id, -square_feet)
 ```
@@ -123,7 +121,7 @@ ggplot(airbnb_model, aes(x = accommodates, y = price, color = room_type)) +
 ```
 
 
-> LASSO Model
+**LASSO Model**
 
 ```{r}
 # Define model specification
@@ -138,6 +136,9 @@ airbnb_variable_recipe <- recipe(price ~ ., data = airbnb_model) |>
   step_impute_knn(all_predictors(), neighbors = 5) |> 
   step_dummy(all_nominal_predictors()) 
 ```
+
+The main obstcale we came across while working with this dataset was the missing data. One of the coulmns which is square_feet was missing more that 4900 out of 5000 rows, hence why we removed it from the airbnb_model because it was not giving us any significant data. However, since square_feet wasn't the only column with missing data, then each remaining missing value was imputed from the listing’s 5 most similar neighbors, with categorical predictors imputed as categories. Imputation was performed within each cross-validation fold so that held-out listings never informed the imputed values.
+
 
 ```{r}
 # Bundle into workflow
@@ -160,34 +161,40 @@ airbnb_lasso_models <- airbnb_lasso_workflow |>
 
 
 ```{r}
+# Select optimal penalty parameter
+best_penalty <- airbnb_lasso_models %>% 
+  select_best(metric = "mae") 
+    
+collect_metrics(airbnb_lasso_models) |> 
+  filter(penalty == best_penalty$penalty)
+
 # Plot cross-validation results
 autoplot(airbnb_lasso_models) + 
   scale_x_continuous() + 
   xlab(expression(lambda))
-```
-
-```{r}
-# Select optimal penalty parameter
-best_penalty <- airbnb_lasso_models |> 
-  select_best(metric = "mae")
-
-best_penalty
 
 parsimonious_penalty <- airbnb_lasso_models |> 
   select_by_one_std_err(metric = "mae", desc(penalty))
-
-parsimonious_penalty
-
-# Check MAE
-show_best(airbnb_lasso_models, metric = "mae")
 
 collect_metrics(airbnb_lasso_models) |> 
   filter(penalty == parsimonious_penalty$penalty)
 ```
 
+We used LASSO regression because many of our predictors overlap, and its penalty shrinks unhelpful coefficients to exactly zero. That makes the model both predictive and interpretable. We tuned the penalty across 50 values from 0.001 to 10, spaced evenly on the log scale, and evaluated each one by 10-fold cross-validated mean absolute error (MAE).
+
 
 ```{r}
-# Finalize workflow and fit full model
+# Finalize workflow and fit full model using best penalty
+airbnb_final_1_lasso <- airbnb_lasso_workflow |> 
+  finalize_workflow(parameters = best_penalty) |> 
+  fit(data = airbnb_model)
+
+airbnb_final_1_lasso %>%
+  tidy() %>%
+  filter(estimate != 0) %>% 
+  arrange(desc(abs(estimate)))
+
+# Finalize workflow and fit full model using parsimonious penalty
 airbnb_final_lasso <- airbnb_lasso_workflow |> 
   finalize_workflow(parameters = parsimonious_penalty) |> 
   fit(data = airbnb_model)
@@ -199,14 +206,9 @@ airbnb_final_lasso %>%
   arrange(desc(abs(estimate)))
 ```
 
-```{r}
-all_airbnb_lasso <- airbnb_final_lasso %>%
-  extract_fit_parsnip() %>%
-  pluck("fit")
+Key findings: The penalty that minimised CV MAE produced an error of $46.47964 and kept 18 predictors. We chose the largest penalty within one standard error of that minimum. It kept only 12 predictors with a CV MAE of $47.09882. The $0.61918 accuracy cost is within cross-validation noise, and the simpler model is easier to interpret and less prone to overfitting.
 
-plot(all_airbnb_lasso, xvar = "lambda", sign.lambda = 1, label = TRUE, col = rainbow(20)) 
-```
-
+Our final model predicts a listing’s nightly price with a cross-validated mean absolute error of $47.10. In other words, on listings it was not trained on, its predictions miss the actual price by about $47 on average. Room type is the strongest predictor of price. Holding all other features constant, private rooms are predicted to cost $54 less per night than entire homes or apartments, and shared rooms $57 less. Location is the next most important factor: Manhattan listings are predicted to cost about $40 more than comparable listings in the Bronx. Capacity also raises price. Each additional bathroom adds about $30, each bedroom $22, and each guest the listing accommodates $16. 
 
 \
 \
