@@ -23,8 +23,8 @@ knitr::opts_chunk$set(
   collapse = TRUE, 
   warning = FALSE,
   message = FALSE,
-  fig.height = 2.75, 
-  fig.width = 4.25,
+  fig.height = 4.75, 
+  fig.width = 6.25,
   fig.env='figure',
   fig.pos = 'h',
   fig.align = 'center')
@@ -67,6 +67,7 @@ theme_set(theme_bw())
 
 # 2. Technical details
 
+
 ```{r}
 # Import original data
 listings <- read.csv("https://ajohns24.github.io/data/NYC_airbnb_kaggle.csv")
@@ -82,16 +83,24 @@ airbnb <- listings %>%
   select(-neighbourhood, -amenities, -host_response_rate, -calendar_updated)
 ```
 
+```{r}
+# Data wrangling 
+airbnb_model <- airbnb %>% 
+  select(-id, -square_feet)
+```
+
+
 **Plots**
 
 ```{r}
 # Plot 1: Price Distributions Across Neighborhood Groups (Boroughs)
-ggplot(airbnb, aes(x = neighbourhood_group, y = price, fill = neighbourhood_group)) +
+ggplot(airbnb_model, aes(x = neighbourhood_group, y = price, fill = neighbourhood_group)) +
   geom_boxplot(alpha = 0.7, outlier.alpha = 0.2) +
   labs(
     title = "AirBnB Price Distributions Across NYC Boroughs",
     x = "Borough",
-    y = "Nightly Price ($)"
+    y = "Nightly Price ($)",
+    caption = "Figure 1"
   ) +
   theme_minimal() +
   theme(legend.position = "none") +
@@ -100,14 +109,15 @@ ggplot(airbnb, aes(x = neighbourhood_group, y = price, fill = neighbourhood_grou
 
 ```{r}
 # Plot 2: Predictors used (2): accommodation capacity, roomtype
-ggplot(airbnb, aes(x = accommodates, y = price, color = room_type)) +
+ggplot(airbnb_model, aes(x = accommodates, y = price, color = room_type)) +
   geom_point(alpha = 0.4, position = "jitter") +
   geom_smooth(method = "loess", se = FALSE, size = 1.2) +
   labs(
     title = "Price Trends by Physical Capacity and Room Type",
     x = "Number of Guests Accommodated",
     y = "Nightly Price ($)",
-    color = "Room Type"
+    color = "Room Type",
+    caption = "Figure 2"
   ) +
   theme_minimal()
 ```
@@ -123,8 +133,7 @@ airbnb_lasso_spec <- linear_reg() |>
   set_args(mixture = 1, penalty = tune())
 
 # Define recipe preprocessing steps
-airbnb_variable_recipe <- recipe(price ~ ., data = airbnb) |> 
-  step_rm(id) |> 
+airbnb_variable_recipe <- recipe(price ~ ., data = airbnb_model) |> 
   step_string2factor(all_nominal_predictors()) |> 
   step_impute_knn(all_predictors(), neighbors = 5) |> 
   step_dummy(all_nominal_predictors()) 
@@ -144,7 +153,7 @@ set.seed(253)
 airbnb_lasso_models <- airbnb_lasso_workflow |> 
   tune_grid(
     grid = grid_regular(penalty(range = c(-3, 1)), levels = 50),
-    resamples = vfold_cv(airbnb, v = 10),
+    resamples = vfold_cv(airbnb_model, v = 10),
     metrics = metric_set(mae)
   )
 ```
@@ -175,13 +184,21 @@ parsimonious_penalty
 # Finalize workflow and fit full model
 airbnb_final_lasso <- airbnb_lasso_workflow |> 
   finalize_workflow(parameters = parsimonious_penalty) |> 
-  fit(data = airbnb)
+  fit(data = airbnb_model)
 
 # View non-zero coefficient estimates
 airbnb_final_lasso %>%
   tidy() %>%
   filter(estimate != 0) %>% 
   arrange(desc(abs(estimate)))
+```
+
+```{r}
+all_airbnb_lasso <- airbnb_final_lasso %>%
+  extract_fit_parsnip() %>%
+  pluck("fit")
+
+plot(all_airbnb_lasso, xvar = "lambda", sign.lambda = 1, label = TRUE, col = rainbow(20)) 
 ```
 
 
