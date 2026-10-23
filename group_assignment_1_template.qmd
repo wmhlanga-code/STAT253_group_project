@@ -12,10 +12,12 @@ format:
 ---
 
 <!-- NOTE TO STUDENTS:  -->
-<!-- - Change the title in line 2. -->
-<!-- - Put all names in line 5. -->
-<!-- - Do not modify the structure of this template! -->
 
+<!-- - Change the title in line 2. -->
+
+<!-- - Put all names in line 5. -->
+
+<!-- - Do not modify the structure of this template! -->
 
 ```{r setup}
 #| include: false
@@ -44,29 +46,26 @@ theme_set(theme_bw())
 \
 \
 
-
-
-
-
-
 # 1. Key Takeaways
 
-<!-- REMEMBER: NO R code in this section. -->
+This analysis investigated how well listing features predict Airbnb nightly prices in New York City and which characteristics are associated with higher prices. We analyzed a random sample of 5,000 listings priced above \$0 and below \$1,000 per night, using LASSO regression, five-neighbor imputation of missing values, and a 10-fold cross-validation. While there were many predictors to consider we plotted just a few in Figure 1 and 2 to explore relationships before modeling.
 
+Figure 1 shows that location matters, though only partly. Manhattan listings have the highest typical prices (median of roughly \$145 per night), followed by Brooklyn (about \$95), with the Bronx being the lowest (about \$65). However, the price distributions overlap within the boroughs, and every borough includes listings that are outliers. So we can conclude that borough provides useful pricing context but cannot explain a listing’s price on its own.
 
+Figure 2 shows that room type and capacity are also important. Entire homes generally cost more than private rooms, with the latter costing more than shared rooms. Prices tend to increase with the number of guests total accommodated, particularly for entire homes with prices ranging from roughly \$130-150 for one guest to about \$500 for sixteen. Still, the varying spread of prices at similar capacities shows that room type and size alone do not fully explain price differences.
 
+We then built a prediction model and in cross-validation, the selected model’s predictions differed from listed nightly prices by an average absolute amount of \$47.10. Given typical prices of \$65-145, errors of this size can be consequential, so predictions should inform pricing decisions rather than replace them. We used the LASSO model to filter the most meaningful predictors for our analysis, where we ended up having 17 predictors. Nevertheless, the model’s chosen and retained predictors still align with the observed patterns observed in Figures 1 & 2.
 
+For otherwise similar listings, private and shared rooms were associated with prices approximately \$54 and \$57 lower than entire homes, and a Manhattan location with a roughly \$40 premium relative to the Bronx. Each additional bathroom (about \$30), bedroom (about \$22), and accommodated guest (about \$16) was associated with higher prices.
 
-
+We recommend using these estimates as reference points when judging whether a listing’s price is reasonable for its location, room type, and size. Some limitations to recognise from this report were: 1) listings of \$1,000 or more were excluded, 2) missing values were estimated and lastly, 3) these estimates reflect associations not causality.
 
 \
 \
 \
 \
-
 
 # 2. Technical details
-
 
 ```{r}
 # Import original data
@@ -120,7 +119,6 @@ ggplot(airbnb_model, aes(x = accommodates, y = price, color = room_type)) +
   ) +
   theme_minimal()
 ```
-
 
 **Model Specification and Tuning**
 
@@ -182,7 +180,7 @@ collect_metrics(airbnb_lasso_models) |>
   filter(penalty == parsimonious_penalty$penalty)
 ```
 
-The penalty value that minimised cross-validated error achieved a Mean Absolute Error of $46.48 while retaining 18 predictor variables. However, to prevent overfitting and produce a cleaner explanation of price drivers, we adopted the one-standard-error rule to select a more parsimonious model. This simpler specification selected 12 non-zero predictors with a cross-validated Mean Absolute Error of $47.10. Accepting an error increase of merely 62 cents per night allowed us to remove six unnecessary variables, achieving an optimal balance between predictive accuracy and statistical simplicity.
+The penalty value that minimised cross-validated error achieved a Mean Absolute Error of \$46.48 while retaining 18 predictor variables. However, to prevent overfitting and produce a cleaner explanation of price drivers, we adopted the one-standard-error rule to select a more parsimonious model. This simpler specification selected 12 non-zero predictors with a cross-validated Mean Absolute Error of \$47.10. Accepting an error increase of merely 62 cents per night allowed us to remove six unnecessary variables, achieving an optimal balance between predictive accuracy and statistical simplicity.
 
 ```{r}
 # Finalize workflow and fit full model using best penalty
@@ -207,49 +205,28 @@ airbnb_final_lasso %>%
   arrange(desc(abs(estimate)))
 ```
 
-On unseen listing data, our finalised parsimonious model predicts nightly rates with an expected average error of approximately $47.10. An examination of the non-zero model coefficients demonstrates that room category serves as the single strongest driver of rental pricing. Relative to renting an entire home or apartment, listing a private room reduces the expected nightly price by approximately $54, while offering a shared room lowers the predicted price by $57, while holding all other listing features constant.
+On unseen listing data, our finalised parsimonious model predicts nightly rates with an expected average error of approximately \$47.10. An examination of the non-zero model coefficients demonstrates that room category serves as the single strongest driver of rental pricing. Relative to renting an entire home or apartment, listing a private room reduces the expected nightly price by approximately \$54, while offering a shared room lowers the predicted price by \$57, while holding all other listing features constant.
 
-Geographic location demonstrates the second largest impact on rental valuation. Controlling for physical size and amenities, listings situated in Manhattan command a premium of roughly $40 per night compared to baseline listings located in the Bronx. Finally, physical property capacity scales predictably: each additional bathroom increases expected nightly price by about $30, each additional bedroom adds approximately $22, and each additional guest accommodated raises the price by $16.
-
-
+Geographic location demonstrates the second largest impact on rental valuation. Controlling for physical size and amenities, listings situated in Manhattan command a premium of roughly \$40 per night compared to baseline listings located in the Bronx. Finally, physical property capacity scales predictably: each additional bathroom increases expected nightly price by about \$30, each additional bedroom adds approximately \$22, and each additional guest accommodated raises the price by \$16.
 
 # 3. Contributions
 
+Wethu: Early data exploration and the final working code for the prediction model.
 
+Thusa: Early data exploration and ran the first trial-and-error models.
 
-
-
-
-
-
-
+Shona: Code debugging and assistance with the report write-up
 
 \
 \
 \
 \
-
-
 
 # 4. AI Disclosures
 
-
-
-
-
-
-
-
-
-
-
-
-
+We primarily used our in class notes as reference points to complete this project and not on AI.
 
 \
 \
 \
 \
-
-
-
