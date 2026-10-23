@@ -87,8 +87,9 @@ airbnb_model <- airbnb %>%
   select(-id, -square_feet)
 ```
 
+The main obstcale we came across while working with this dataset was the missing data. One of the coulmns which is square_feet was missing more that 4900 out of 5000 rows, hence why we removed it from the airbnb_model because it was not giving us any significant data. However, since square_feet wasn't the only column with missing data, to address the remaining missing values across other predictors without discarding valuable observations, we implemented $K$-nearest neighbors imputation with five neighbors within our preprocessing recipe. Continuous missing features were estimated using the mean values of a listing’s five most similar neighbors, whereas categorical variables were imputed using the neighbor mode. Imputation was performed within each cross-validation fold so that held-out listings never informed the imputed values.
 
-**Plots**
+**Exploratory Data Analysis**
 
 ```{r}
 # Plot 1: Price Distributions Across Neighborhood Groups (Boroughs)
@@ -121,7 +122,9 @@ ggplot(airbnb_model, aes(x = accommodates, y = price, color = room_type)) +
 ```
 
 
-**LASSO Model**
+**Model Specification and Tuning**
+
+Because rental listings feature naturally correlated characteristics such as room count, bathroom count, and overall guest capacity, standard linear regression risks variance inflation due to multicollinearity. To overcome this limitation, we selected LASSO regression, an L1-regularized linear model. LASSO applies a penalty parameter that shrinks uninformative coefficient estimates toward zero, automatically zeroing out redundant features to deliver both predictive precision and parsimonious interpretability. We established a regularized grid search across 50 penalty values ranging from 0.001 to 10 on a logarithmic scale, evaluating model accuracy through 10-fold cross-validated Mean Absolute Error.
 
 ```{r}
 # Define model specification
@@ -135,20 +138,12 @@ airbnb_variable_recipe <- recipe(price ~ ., data = airbnb_model) |>
   step_string2factor(all_nominal_predictors()) |> 
   step_impute_knn(all_predictors(), neighbors = 5) |> 
   step_dummy(all_nominal_predictors()) 
-```
 
-The main obstcale we came across while working with this dataset was the missing data. One of the coulmns which is square_feet was missing more that 4900 out of 5000 rows, hence why we removed it from the airbnb_model because it was not giving us any significant data. However, since square_feet wasn't the only column with missing data, then each remaining missing value was imputed from the listing’s 5 most similar neighbors, with categorical predictors imputed as categories. Imputation was performed within each cross-validation fold so that held-out listings never informed the imputed values.
-
-
-```{r}
 # Bundle into workflow
 airbnb_lasso_workflow <- workflow() |> 
   add_recipe(airbnb_variable_recipe) |> 
   add_model(airbnb_lasso_spec)
-```
 
-
-```{r}
 # Tune model over cross-validation grid
 set.seed(253)
 airbnb_lasso_models <- airbnb_lasso_workflow |> 
@@ -159,6 +154,9 @@ airbnb_lasso_models <- airbnb_lasso_workflow |>
   )
 ```
 
+**Tuning Evaluation and Penalty Selection**
+
+We evaluated 50 regularized penalty values ($\lambda$ between $[0.001, 10]$) on a logarithmic scale across 10-fold cross-validation using Mean Absolute Error (MAE) as our evaluation metric.
 
 ```{r}
 # Select optimal penalty parameter
@@ -184,8 +182,7 @@ collect_metrics(airbnb_lasso_models) |>
   filter(penalty == parsimonious_penalty$penalty)
 ```
 
-We used LASSO regression because many of our predictors overlap, and its penalty shrinks unhelpful coefficients to exactly zero. That makes the model both predictive and interpretable. We tuned the penalty across 50 values from 0.001 to 10, spaced evenly on the log scale, and evaluated each one by 10-fold cross-validated mean absolute error (MAE).
-
+The penalty value that minimised cross-validated error achieved a Mean Absolute Error of $46.48 while retaining 18 predictor variables. However, to prevent overfitting and produce a cleaner explanation of price drivers, we adopted the one-standard-error rule to select a more parsimonious model. This simpler specification selected 12 non-zero predictors with a cross-validated Mean Absolute Error of $47.10. Accepting an error increase of merely 62 cents per night allowed us to remove six unnecessary variables, achieving an optimal balance between predictive accuracy and statistical simplicity.
 
 ```{r}
 # Finalize workflow and fit full model using best penalty
@@ -210,14 +207,10 @@ airbnb_final_lasso %>%
   arrange(desc(abs(estimate)))
 ```
 
-Key findings: The penalty that minimised CV MAE produced an error of $46.47964 and kept 18 predictors. We chose the largest penalty within one standard error of that minimum. It kept only 12 predictors with a CV MAE of $47.09882. The $0.61918 accuracy cost is within cross-validation noise, and the simpler model is easier to interpret and less prone to overfitting.
+On unseen listing data, our finalised parsimonious model predicts nightly rates with an expected average error of approximately $47.10. An examination of the non-zero model coefficients demonstrates that room category serves as the single strongest driver of rental pricing. Relative to renting an entire home or apartment, listing a private room reduces the expected nightly price by approximately $54, while offering a shared room lowers the predicted price by $57, while holding all other listing features constant.
 
-Our final model predicts a listing’s nightly price with a cross-validated mean absolute error of $47.10. In other words, on listings it was not trained on, its predictions miss the actual price by about $47 on average. Room type is the strongest predictor of price. Holding all other features constant, private rooms are predicted to cost $54 less per night than entire homes or apartments, and shared rooms $57 less. Location is the next most important factor: Manhattan listings are predicted to cost about $40 more than comparable listings in the Bronx. Capacity also raises price. Each additional bathroom adds about $30, each bedroom $22, and each guest the listing accommodates $16. 
+Geographic location demonstrates the second largest impact on rental valuation. Controlling for physical size and amenities, listings situated in Manhattan command a premium of roughly $40 per night compared to baseline listings located in the Bronx. Finally, physical property capacity scales predictably: each additional bathroom increases expected nightly price by about $30, each additional bedroom adds approximately $22, and each additional guest accommodated raises the price by $16.
 
-\
-\
-\
-\
 
 
 # 3. Contributions
