@@ -58,7 +58,7 @@ We then built a prediction model and in cross-validation, the selected model’s
 
 For otherwise similar listings, private and shared rooms were associated with prices approximately \$54 and \$57 lower than entire homes, and a Manhattan location with a roughly \$40 premium relative to the Bronx. Each additional bathroom (about \$30), bedroom (about \$22), and accommodated guest (about \$16) was associated with higher prices.
 
-We recommend using these estimates as reference points when judging whether a listing’s price is reasonable for its location, room type, and size. Some limitations to recognise from this report were: 1) listings of \$1,000 or more were excluded, 2) missing values were estimated and lastly, 3) these estimates reflect associations not causality.
+We recommend using these estimates as reference points when judging whether a listing’s price is reasonable for its location, room type, and size. Some limitations to recognise from this report were: 1) listings of \$1,000 or more were excluded, 2) missing values were estimated and lastly, 3) these estimates reflect associations not causality. Moreover, the model assumes that each feature has a linear relationship with price. Finally, this model also doesn't account for photos and furnishing, which are vital characteristics when booking an Airbnb.
 
 \
 \
@@ -86,7 +86,7 @@ airbnb_model <- airbnb %>%
   select(-id, -square_feet)
 ```
 
-The main obstcale we came across while working with this dataset was the missing data. One of the coulmns which is square_feet was missing more that 4900 out of 5000 rows, hence why we removed it from the airbnb_model because it was not giving us any significant data. However, since square_feet wasn't the only column with missing data, to address the remaining missing values across other predictors without discarding valuable observations, we implemented $K$-nearest neighbors imputation with five neighbors within our preprocessing recipe. Continuous missing features were estimated using the mean values of a listing’s five most similar neighbors, whereas categorical variables were imputed using the neighbor mode. Imputation was performed within each cross-validation fold so that held-out listings never informed the imputed values.
+The main obstacle we came across while working with this dataset was the missing data. One of the columns which is square_feet was missing more that 4900 out of 5000 rows, hence why we removed it from the airbnb_model because it was not giving us any significant data. However, since square_feet wasn't the only column with missing data, to address the remaining missing values across other predictors without discarding valuable observations, we implemented $K$-nearest neighbors imputation with five neighbors within our pre-processing recipe. Continuous missing features were estimated using the mean values of a listing’s five most similar neighbors, whereas categorical variables were imputed using the neighbor mode. Imputation was performed within each cross-validation fold so that held-out listings never informed the imputed values.
 
 **Exploratory Data Analysis**
 
@@ -168,10 +168,14 @@ collect_metrics(airbnb_lasso_models) |>
 autoplot(airbnb_lasso_models) + 
   scale_x_continuous() + 
   xlab(expression(lambda)) +
+  geom_errorbar(data = collect_metrics(airbnb_lasso_models),
+                aes(x = penalty, ymin = mean - std_err, ymax = mean + std_err), 
+                alpha = 0.5)+
   labs(
     title = "CV MAE vs Tuning parameter",
     caption = "Figure 3"
-  )
+  ) +
+  geom_vline(xintercept = 5.1, color = "blue")
 
 parsimonious_penalty <- airbnb_lasso_models |> 
   select_by_one_std_err(metric = "mae", desc(penalty))
@@ -180,7 +184,8 @@ collect_metrics(airbnb_lasso_models) |>
   filter(penalty == parsimonious_penalty$penalty)
 ```
 
-The penalty value that minimised cross-validated error achieved a Mean Absolute Error of \$46.48 while retaining 18 predictor variables. However, to prevent overfitting and produce a cleaner explanation of price drivers, we adopted the one-standard-error rule to select a more parsimonious model. This simpler specification selected 12 non-zero predictors with a cross-validated Mean Absolute Error of \$47.10. Accepting an error increase of merely 62 cents per night allowed us to remove six unnecessary variables, achieving an optimal balance between predictive accuracy and statistical simplicity.
+The penalty value that minimised cross-validated error achieved a Mean Absolute Error of \$46.48 at a penalty value of around lambda = 1.9 while retaining 18 predictor variables. However, to prevent overfitting and produce a cleaner explanation of price drivers, we adopted the one-standard-error rule to select a more parsimonious model. This simpler specification selected 12 non-zero predictors with a cross-validated Mean Absolute Error of \$47.10. Accepting an error increase of merely 62 cents per night allowed us to remove six unnecessary variables, achieving an optimal balance between predictive accuracy and statistical simplicity.
+
 
 ```{r}
 # Finalize workflow and fit full model using best penalty
@@ -194,20 +199,32 @@ airbnb_final_1_lasso %>%
   arrange(desc(abs(estimate)))
 
 # Finalize workflow and fit full model using parsimonious penalty
-airbnb_final_lasso <- airbnb_lasso_workflow |> 
+airbnb_final_1_lasso <- airbnb_lasso_workflow |> 
   finalize_workflow(parameters = parsimonious_penalty) |> 
   fit(data = airbnb_model)
 
 # View non-zero coefficient estimates
-airbnb_final_lasso %>%
+airbnb_final_1_lasso %>%
   tidy() %>%
   filter(estimate != 0) %>% 
   arrange(desc(abs(estimate)))
 ```
 
-On unseen listing data, our finalised parsimonious model predicts nightly rates with an expected average error of approximately \$47.10. An examination of the non-zero model coefficients demonstrates that room category serves as the single strongest driver of rental pricing. Relative to renting an entire home or apartment, listing a private room reduces the expected nightly price by approximately \$54, while offering a shared room lowers the predicted price by \$57, while holding all other listing features constant.
+On unseen listing data, our finalized parsimonious model predicts nightly rates with an expected average error of approximately \$47.10. An examination of the non-zero model coefficients demonstrates that room category serves as the single strongest driver of rental pricing. Relative to renting an entire home or apartment, listing a private room reduces the expected nightly price by approximately \$54, while offering a shared room lowers the predicted price by \$57, while holding all other variables constant.
 
 Geographic location demonstrates the second largest impact on rental valuation. Controlling for physical size and amenities, listings situated in Manhattan command a premium of roughly \$40 per night compared to baseline listings located in the Bronx. Finally, physical property capacity scales predictably: each additional bathroom increases expected nightly price by about \$30, each additional bedroom adds approximately \$22, and each additional guest accommodated raises the price by \$16.
+
+```{r}
+airbnb_final_1_lasso |> 
+  augment(new_data = airbnb) |> 
+  mutate(.resid = price - .pred) |> 
+  ggplot(aes(x = .pred, y = .resid)) + 
+  geom_point() +
+  geom_hline(yintercept = 0) +
+  geom_smooth(se = FALSE) +
+  labs(y = "Residuals ($)", x = "Predicted Price ($)")
+```
+
 
 # 3. Contributions
 
@@ -215,7 +232,7 @@ Wethu: Early data exploration and the final working code for the prediction mode
 
 Thusa: Early data exploration and ran the first trial-and-error models.
 
-Shona: Code debugging and assistance with the report write-up
+Shona: Code debugging and assistance with the analysis write-up.
 
 \
 \
@@ -224,7 +241,7 @@ Shona: Code debugging and assistance with the report write-up
 
 # 4. AI Disclosures
 
-We primarily used our in class notes as reference points to complete this project and not on AI.
+We primarily used our in class notes as reference points and prof. Alicia's advice to complete this project and not AI.
 
 \
 \
