@@ -43,7 +43,14 @@ theme_set(theme_bw())
 # Load packages
 library(tidyverse)
 library(tidymodels)
+library(rpart)        # for building trees
+library(rpart.plot)   # for plotting trees
+library(randomForest) # for bagging & forests
+library(infer)        # for resampling
 kangaroos <- read.csv("https://ajohns24.github.io/data/kangaroo.csv")
+head(kangaroos)
+kangaroos <- kangaroos |>
+  mutate(species = as.factor(species))
 ```
 
 
@@ -67,9 +74,78 @@ kangaroos <- read.csv("https://ajohns24.github.io/data/kangaroo.csv")
 # 2. Technical details
 
 
+```{r}
+#| eval: true
+#| fig-height: 8
+#| fig-width: 8
+
+# STEP 1: tree specification with specific tuning parameter values
+tree_spec <- decision_tree() |>
+  set_mode("classification") |> 
+  set_engine(engine = "rpart") |> 
+  set_args(cost_complexity = 0, min_n = 2, tree_depth = 30)
+
+# STEP 2: Build the tree!
+# Note that we specified our tuning parameters in Step 1.
+# Thus no tuning (hence no workflows) necessary.
+kangaroo_tree <- tree_spec |> 
+  fit(species ~ ., data = kangaroos)
+
+# Plot the tree
+kangaroo_tree |> 
+  extract_fit_engine() |> 
+  plot(margin = 0) 
+kangaroo_tree |> 
+  extract_fit_engine() |> 
+  text(cex = 0.7)
+```
+
+
+```{r}
+#| eval: false
+# There's randomness behind the splits!
+
+set.seed(253)
+    
+# STEP 1: Model Specification
+rf_spec <- rand_forest()  |>
+  set_mode("classification") |>
+  set_engine(engine = "ranger") |> 
+  set_args(
+    mtry = NULL,
+    trees = 500,
+    min_n = 2,
+    probability = FALSE,    # Report classifications, not probability calculations
+    importance = "impurity" # Use Gini index to measure variable importance
+  )
+    
+# STEP 2: Build the forest
+# There are no preprocessing steps or tuning, hence no need for a workflow!
+kangaroo_forest <- rf_spec |> 
+  fit(species ~ ., data = kangaroos)
+```
 
 
 
+```{r}
+kangaroo_forest
+```
+
+```{r}
+#| eval: true
+#| fig-height: 20
+#| fig-width: 20
+# Print the metrics
+kangaroo_forest |>
+  extract_fit_engine() |>
+  pluck("variable.importance") |> 
+  sort(decreasing = TRUE)
+    
+# Plot the metrics
+library(vip)
+kangaroo_forest |> 
+  vip(geom = "point", num_features = 11)
+```
 
 
 \
