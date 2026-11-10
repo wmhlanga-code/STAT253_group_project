@@ -133,8 +133,8 @@ kangaroo_forest
 
 ```{r}
 #| eval: true
-#| fig-height: 20
-#| fig-width: 20
+#| fig-height: 10
+#| fig-width: 10
 # Print the metrics
 kangaroo_forest |>
   extract_fit_engine() |>
@@ -144,9 +144,25 @@ kangaroo_forest |>
 # Plot the metrics
 library(vip)
 kangaroo_forest |> 
-  vip(geom = "point", num_features = 11)
+  vip(geom = "point", num_features = 20)
 ```
-
+```{r}
+#| eval: true
+# The cbind() includes the original candy data
+# alongside their predicted popularity levels
+kangaroo_forest |> 
+  predict(new_data = kangaroos) |> 
+  cbind(kangaroos) |> 
+  conf_mat(
+    truth = species,
+    estimate = .pred_class
+  )
+```
+```{r}
+#Overall accuracy
+(49+42+35)/148
+```
+Better at predicting fulginosus species compared to others
 
 \
 \
