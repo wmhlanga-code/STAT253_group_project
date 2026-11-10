@@ -39,7 +39,12 @@ theme_set(theme_bw())
 \
 \
 
-
+```{r}
+# Load packages
+library(tidyverse)
+library(tidymodels)
+kangaroos <- read.csv("https://ajohns24.github.io/data/kangaroo.csv")
+```
 
 
 

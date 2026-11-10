@@ -2,7 +2,7 @@
 title: "What Drives the Price of a Stay?"
 subtitle: "STAT 253 Group Assignment 1"
 date: today
-author: "Wethu Mhlanga, Providence Thusabantu, Rukhshona Jalilova"
+author: "Wethu Mhlanga, Providence Thusabantu, Shona Jalilova"
 format:
   html:
     toc: true
@@ -58,7 +58,7 @@ We then built a prediction model and in cross-validation, the selected model’s
 
 For otherwise similar listings, private and shared rooms were associated with prices approximately \$54 and \$57 lower than entire homes, and a Manhattan location with a roughly \$40 premium relative to the Bronx. Each additional bathroom (about \$30), bedroom (about \$22), and accommodated guest (about \$16) was associated with higher prices.
 
-We recommend using these estimates as reference points when judging whether a listing’s price is reasonable for its location, room type, and size. Some limitations to recognise from this report were: 1) listings of \$1,000 or more were excluded, 2) missing values were estimated and lastly, 3) these estimates reflect associations not causality. Moreover, the model assumes that each feature has a linear relationship with price. Finally, this model also doesn't account for photos and furnishing, which are vital characteristics when booking an Airbnb.
+We recommend using these estimates as reference points when judging whether a listing’s price is reasonable for its location, room type, and size. Some limitations to recognise from this report were: 1) listings of \$1,000 or more were excluded, 2) missing values were estimated and lastly, 3) these estimates reflect associations not causality. Figure 4 showed that the model’s predictions may be less reliable for higher-priced observations because the residuals show a nonlinear pattern and increasing variability, leading to higher and less consistent prediction errors. Moreover, the model assumes that each feature has a linear relationship with price. Finally, this model also doesn't account for photos and furtniture, which are vital characteristics when booking an Airbnb.
 
 \
 \
@@ -117,7 +117,8 @@ ggplot(airbnb_model, aes(x = accommodates, y = price, color = room_type)) +
     color = "Room Type",
     caption = "Figure 2"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  scale_color_viridis_d()
 ```
 
 **Model Specification and Tuning**
@@ -172,7 +173,7 @@ autoplot(airbnb_lasso_models) +
                 aes(x = penalty, ymin = mean - std_err, ymax = mean + std_err), 
                 alpha = 0.5)+
   labs(
-    title = "CV MAE vs Tuning parameter",
+    title = "Mean absolute error (MAE) vs Tuning parameter",
     caption = "Figure 3"
   ) +
   geom_vline(xintercept = 5.1, color = "blue")
@@ -222,17 +223,19 @@ airbnb_final_1_lasso |>
   geom_point() +
   geom_hline(yintercept = 0) +
   geom_smooth(se = FALSE) +
-  labs(y = "Residuals ($)", x = "Predicted Price ($)")
+  labs(title = "Residual plot", y = "Residuals", x = "Predicted Price ($)",
+        caption = "Figure 4")
 ```
 
+The residual plot shows both a curved pattern and increasing variability, suggesting that the model may be missing nonlinear relationships and that prediction errors are larger for higher-priced observations. This tells us that prediction errors differ across the price ranges. Hence, although LASSO provides a useful way to predict prices from multiple characteristics, its accuracy is not uniform across all of them.
 
 # 3. Contributions
 
-Wethu: Early data exploration and the final working code for the prediction model.
+Wethu: Early data exploration and the final working code for the prediction model. He worked through the model selection process and performed most of the coding for this project.
 
-Thusa: Early data exploration and ran the first trial-and-error models.
+Thusa: Early data exploration and ran the first trial-and-error models. Identified key takeaways and wrote the report for that section. Thusa also contributed with the exploratory data analysis. 
 
-Shona: Code debugging and assistance with the analysis write-up.
+Shona: Code debugging and assistance with the analysis write-up. Worked on final revisions.
 
 \
 \
