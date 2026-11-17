@@ -18,17 +18,20 @@ format:
 
 
 ```{r setup}
+library(tidyverse)
+library(tidymodels) 
+
 #| include: false
 knitr::opts_chunk$set(
-  collapse = TRUE, 
-  warning = FALSE,
-  message = FALSE,
-  fig.height = 2.75, 
-  fig.width = 4.25,
-  fig.env='figure',
-  fig.pos = 'h',
-  fig.align = 'center')
-
+	fig.align = "center",
+	fig.env = "figure",
+	fig.height = 2.75,
+	fig.pos = "h",
+	fig.width = 4.25,
+	message = FALSE,
+	warning = FALSE,
+	collapse = TRUE
+)
 # Set theme + color blind friendlier paletter
 palette(palette.colors(palette = "Okabe-Ito"))
 scale_colour_discrete <- function(...) scale_colour_manual(values = palette())
@@ -75,6 +78,49 @@ kangaroos <- kangaroos |>
 
 
 ```{r}
+# Plot 1: Predictors used (1): nasal.length
+ggplot(kangaroos, aes(x = species, y = nasal.length, fill = species)) +
+  geom_boxplot(alpha = 0.7, outlier.alpha = 0.2) +
+  labs(
+    title = "Nasal Length Distributions Across Species",
+    x = "Species",
+    y = "Nasal Length (mm)",
+    caption = "Figure 1"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none") 
+```
+
+```{r}
+# Plot 2: Predictors used (2): crest.width & mandible.width
+ggplot(kangaroos, aes(x = crest.width, y = mandible.width, color = species)) +
+  geom_point(alpha = 0.4, position = "jitter") +
+  labs(
+    title = "Crest Width by Mandible Width",
+    x = "Crest Width(mm)",
+    y = "Mandible Width(mm)",
+    caption = "Figure 2"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+# Plot 3: Predictors used (2): zygomatic.width & sex
+  ggplot(kangaroos, aes(x = zygomatic.width, fill = species)) + 
+  geom_density(alpha = 0.5) + 
+  facet_wrap("sex") +
+  labs(
+    title = "Species by Zygomatic Width Faceted by Sex",
+    x = "Zygomatic Width(mm)",
+    y = "Density",
+    caption = "Figure 3"
+  ) +
+  theme_minimal()
+```
+
+
+
+```{r}
 #| eval: true
 #| fig-height: 8
 #| fig-width: 8
@@ -102,7 +148,6 @@ kangaroo_tree |>
 
 
 ```{r}
-#| eval: false
 # There's randomness behind the splits!
 
 set.seed(253)
