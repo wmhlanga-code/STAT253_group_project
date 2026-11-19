@@ -86,7 +86,7 @@ ggplot(kangaroos, aes(x = species, y = nasal.length, fill = species)) +
 ```
 
 ```{r}
-# Plot 2: Predictors used (2): crest.width & mandible.width
+# Plot 2: Predictors used (2): crest.width & mandible.depth
 ggplot(kangaroos, aes(x = crest.width, y = mandible.depth, color = species)) +
   geom_point(alpha = 0.4, position = "jitter") +
   labs(
