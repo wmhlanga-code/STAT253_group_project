@@ -93,12 +93,12 @@ ggplot(kangaroos, aes(x = species, y = nasal.length, fill = species)) +
 
 ```{r}
 # Plot 2: Predictors used (2): crest.width & mandible.width
-ggplot(kangaroos, aes(x = crest.width, y = mandible.width, color = species)) +
+ggplot(kangaroos, aes(x = crest.width, y = mandible.depth, color = species)) +
   geom_point(alpha = 0.4, position = "jitter") +
   labs(
-    title = "Crest Width by Mandible Width",
+    title = "Crest Width by Mandible Depth",
     x = "Crest Width(mm)",
-    y = "Mandible Width(mm)",
+    y = "Mandible Depth(mm)",
     caption = "Figure 2"
   ) +
   theme_minimal()
