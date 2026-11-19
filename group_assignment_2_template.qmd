@@ -167,7 +167,7 @@ kangaroo_forest <- rf_spec |>
 kangaroo_forest
 ```
 
-We estimated performance with out-of-bag (OOB) error: each skull is classified using only the one-third of trees whose bootstrap samples left it out. The OOB error was 24.75%, so we expect about 75.25% of new skulls to be classified correctly. Guessing the most common species would get about 34% right.
+We estimated performance with out-of-bag (OOB) error: each skull is classified using only the one-third of trees whose bootstrap samples left it out. The OOB error was 24.75%, so we expect about 75.25% of new skulls to be classified correctly. Guessing the most common species would get about 34% right as per the no information rate (NIR) calculated from the confusion matrix below.
 
 ```{r}
 #| eval: true
