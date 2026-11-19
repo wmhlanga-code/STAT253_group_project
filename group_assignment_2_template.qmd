@@ -69,7 +69,7 @@ kangaroos <- kangaroos |>
 
 # 2. Technical details
 
-Our goal was to classify kangaroo skulls as giganteus, melanops or fuliginosus using 18 skull measurements and sex. Most of these measurements are strongly correlated, since they largely reflect overall skull size.
+Our goal was to classify kangaroo skulls as giganteus, melanops or fuliginosus using 18 skull measurements and sex. Most of these measurements might be strongly correlated, since they largely reflect overall skull size.
 
 ```{r}
 # Plot 1: Predictors used (1): nasal.length
