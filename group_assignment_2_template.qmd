@@ -2,7 +2,7 @@
 title: "Your Title"
 subtitle: "STAT 253 Group Assignment 2"
 date: today
-author: "Your Names"
+author: "Shona, Wethu, Thusa"
 format:
   html:
     toc: true
@@ -63,6 +63,21 @@ kangaroos <- kangaroos |>
 <!-- REMEMBER: NO R code in this section. -->
 
 
+The analysis investigated how kangaroo species are classified by their skull features. We looked at three species here: fuliginosus, giganteus, and melanops, and analyzed a sample of 148 individual kangaroos, distinguished by sex and skull measurements. Our findings suggest that skull features provide useful information for identifying species, however, some species are more difficult to distinguish than others.
+
+Before attempting to classify, we built 3 exploratory plots. For example, **Figure 3 ** shows the distribution of zygomatic width in male and female kangaroos across the three species. The distribution overlap suggested that this measurement alone doesn't do a good job at distinguishing all three species. 
+
+**Figure 4** illustrates a  decision tree, or a model that makes predictions by dividing observations into homogenous groups based on skull measurements. However, we used the forest algorithm  which is a method that combines predictions from many decision trees, each using different subsets measurements, to make a more reliable final prediction. A random forest achieved an approximate of 75.25% accuracy. It was derived from out-of-bag predictions(where each decision tree was tested using skull features that were left out when an individual tree was built), providing estimates of how well our model will classify new kangaroos. Model accuracy was significantly higher than the 34% accuracy from simply guessing the most common species. The model correctly classified 49 out of 50 M. Fuliginosus skulls in predictions based on training data, but had challenges distinguishing M.giganteus from M.melanops. Moreover, when trying to identify most useful predictors, we determined that nasal length, crest width, and zygomatic width are the most influential measurements in distinguishing species, which is evident from **Figure 5**. Sex contributed the least.
+
+
+The results should be implemented with caution since we were limited by a relatively small sample size of 101 skull measurements, after removing 47 observations missing the measurements. Since its settings were not extensively optimized and its accuracy was estimated using the given data, testing it on a larger, independent dataset would determine how reliably it can classify unfamiliar specimens.
+Moreover, many skull measurements are strongly correlated, meaning they might capture similar aspects of skull size rather than distinct characteristics. The model also assumes that future skulls will have similar measurement patterns to those in our dataset. 
+
+
+
+
+
+
 
 
 
@@ -76,7 +91,7 @@ kangaroos <- kangaroos |>
 
 # 2. Technical details
 
-Our goal was to classify kangaroo skulls as giganteus, melanops or fuliginosus using 18 skull measurements and sex. Most of these measurements are strongly correlated, since they largely reflect overall skull size.
+Most of skull measurements are strongly correlated, since they largely reflect overall skull size. (i included that in our limitations so no need to include it here ig)
 
 ```{r}
 # Plot 1: Predictors used (1): nasal.length
@@ -122,13 +137,14 @@ ggplot(kangaroos, aes(x = crest.width, y = mandible.width, color = species)) +
 
 A single deep classification tree would therefore depend heavily on which of several nearly interchangeable measurements it happened to split on, which makes it unstable and prone to overfitting. We used a random forest instead. Averaging many decorrelated trees reduces that variance, and the forest still lets us rank which measurements matter most.
 
-
 ```{r}
 #| eval: true
 #| fig-height: 8
 #| fig-width: 8
+#| fig-cap: "Figure 4"
 
 # STEP 1: tree specification with specific tuning parameter values
+
 tree_spec <- decision_tree() |>
   set_mode("classification") |> 
   set_engine(engine = "rpart") |> 
@@ -176,7 +192,7 @@ kangaroo_forest <- rf_spec |>
 kangaroo_forest
 ```
 
-We estimated performance with out-of-bag (OOB) error: each skull is classified using only the one-third of trees whose bootstrap samples left it out. The OOB error was 24.75%, so we expect about 75.25% of new skulls to be classified correctly. Guessing the most common species would get about 34% right.
+We estimated performance with out-of-bag (OOB) error: each skull is classified using only the one-third of trees whose bootstrap samples left it out. The OOB error was 24.75%, so we expect about 75.25% of new skulls to be classified correctly. Guessing the most common species would get about 34% right (where is this from??)
 
 
 ```{r}
@@ -202,6 +218,7 @@ The confusion matrix shows a clear pattern in the errors. Fuliginosus is almost 
 #| eval: true
 #| fig-height: 10
 #| fig-width: 10
+#| fig-cap: "Figure 5"
 # Print the metrics
 kangaroo_forest |>
   extract_fit_engine() |>
