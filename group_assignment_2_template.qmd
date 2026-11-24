@@ -1,5 +1,5 @@
 ---
-title: "Your Title"
+title: "Species Identification of Australian Kangaroos Using Skull Measurements"
 subtitle: "STAT 253 Group Assignment 2"
 date: today
 author: "Shona, Wethu, Thusa"
@@ -62,14 +62,13 @@ kangaroos <- kangaroos |>
 
 <!-- REMEMBER: NO R code in this section. -->
 
-The analysis investigated how kangaroo species are classified by skull features. We examined three species—fuliginosus, giganteus, and melanops—in a sample of 148 kangaroos, distinguished by sex and skull measurements. Our findings suggest that skull features provide useful information for identifying species, although some species are more difficult to distinguish than others.
+The analysis investigated how kangaroo species are classified by skull features. We examined three species; fuliginosus, giganteus, and melanops, in a sample of 148 kangaroos, distinguished by sex and skull measurements. Our findings suggest that skull features provide useful information for identifying species, although some species are more difficult to distinguish than others.
 
-Before classification, we created three exploratory plots. **Figure 3** shows the distribution of zygomatic width in male and female kangaroos across the three species. The overlap in the distributions suggests that this measurement alone does not distinguish all three species well.
+Before classification, we created three exploratory plots. Figure 3 shows the distribution of zygomatic width in male and female kangaroos across the three species. The overlap in the distributions suggests that this measurement alone does not distinguish all three species well.
 
-**Figure 4** illustrates a decision tree, which makes predictions by dividing observations into groups based on skull measurements. We used a random forest, which combines predictions from many decision trees, each built using different subsets of the data, to make a more reliable final prediction. The random forest achieved approximately 75.25% accuracy based on out-of-bag predictions: each tree was tested on skulls left out when that tree was built. This provides an estimate of how well the model may classify new kangaroos. Its accuracy was higher than the 34% accuracy from guessing the most common species. The model correctly classified 49 of 50 *M. fuliginosus* skulls in predictions based on the training data, but had difficulty distinguishing *M. giganteus* from *M. melanops*. Nasal length, crest width, and zygomatic width were the most influential measurements for distinguishing species, as shown in **Figure 5**. Sex contributed the least.
+Figure 4 illustrates a decision tree, which makes predictions by dividing observations into groups based on skull measurements. We used a random forest, which combines predictions from many decision trees, each built using different subsets of the data, to make a more reliable final prediction. The random forest achieved approximately 75.25% accuracy based on out-of-bag predictions: each tree was tested on skulls left out when that tree was built. This provides an estimate of how well the model may classify new kangaroos. Its accuracy was higher than the 34% accuracy from guessing the most common species. The model correctly classified 49 of 50 *M. fuliginosus* skulls in predictions based on the training data, but had difficulty distinguishing *M. giganteus* from *M. melanops*. Nasal length, crest width, and zygomatic width were the most influential measurements for distinguishing species, as shown in Figure 5. Sex contributed the least.
 
-These results should be interpreted with caution. The sample included 148 skulls, but only 101 had complete measurements; 47 observations were removed. The model's settings were not extensively optimized, and its accuracy was estimated using the available data. Testing it on a larger, independent dataset would help determine how reliably it classifies unfamiliar specimens. Moreover, many skull measurements are strongly correlated, meaning they might capture similar aspects of skull size rather than distinct characteristics. The model also assumes that future skulls will have measurement patterns similar to those in our dataset.
-\
+These results should be interpreted with caution. The sample included 148 skulls, but only 101 had complete measurements; 47 observations were removed. The model's settings were not extensively optimized, and its accuracy was estimated using the available data. Testing it on a larger, independent dataset would help determine how reliably it classifies unfamiliar specimens. Moreover, many skull measurements are strongly correlated, meaning they might capture similar aspects of skull size rather than distinct characteristics. The model also assumes that future skulls will have measurement patterns similar to those in our dataset.\
 \
 \
 \
@@ -119,7 +118,7 @@ ggplot(kangaroos, aes(x = crest.width, y = mandible.depth, color = species)) +
   theme_minimal()
 ```
 
-A single deep classification tree would therefore depend heavily on which of several nearly interchangeable measurements it happened to split on, which makes it unstable and prone to overfitting. We used a random forest instead. Averaging many decorrelated trees reduces that variance, and the forest still lets us rank which measurements matter most.
+A single deep classification tree would depend heavily on which of several nearly interchangeable measurements it happened to split on, which makes it unstable and prone to overfitting. Hence, We used a random forest instead. Averaging many decorrelated trees reduces that variance, and the forest still lets us rank which measurements matter most.
 
 ```{r}
 #| eval: true
@@ -222,6 +221,12 @@ Variable importance, measured by the total decrease in Gini impurity, ranks nasa
 
 # 3. Contributions
 
+Wethu: Early data exploration and the final working code for the prediction model. He worked through the model selection process.
+
+Thusa: Early data exploration (exploratory plots), code debugging and assistance with the analysis, write-up and final revisions.
+
+Shona: Early model exploration and identification of important predictors, worked on revisions and the write up, particularly key takeaways.
+
 \
 \
 \
@@ -229,7 +234,7 @@ Variable importance, measured by the total decrease in Gini impurity, ranks nasa
 
 # 4. AI Disclosures
 
-\
+We primarily used our in class notes as reference points and prof. Alicia's advice to complete this project and not AI.\
 \
 \
 \
